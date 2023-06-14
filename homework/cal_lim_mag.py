@@ -52,7 +52,7 @@ class Telescope():
     def go_through(self, flux, aperture, fwhm):
         area_in = np.pi * (self.D / 2) ** 2
         energy_in = flux * area_in
-        psf_ratio = 1 - np.exp(-aperture**2 / fwhm**2)
+        psf_ratio = 1 - np.exp(-aperture**2 / 2 / (fwhm / 2)**2)
         energy_out = energy_in * psf_ratio
         return energy_out
 
@@ -237,32 +237,34 @@ def main():
     obsertory.set_telescope(tele)
     obsertory.set_obs(obs)
 
-    event = Event(
-        mag_obj=20 * u.mag, # object magnitude
-        mag_sky=21 * u.mag, # sky magnitude
-        wavelength=500 * u.nm, # wavelength
-        bandwidth=100 * u.nm, # bandwidth
-    )
-    
-    fig = plt.figure(figsize=(8, 6))
-    ax = fig.add_subplot(111)
-    ax.set_xlabel("aperture radius (arcsec)")
-    ax.set_ylabel("SNR")
-    ax.set_title("SNR vs aperture radius")
-    for r_aperture in np.arange(0.1, 5, 0.1) * u.arcsec:
-        snr = obsertory.cal_snr(event, r_aperture)
-        ax.plot(r_aperture, snr, "k.")
-    # plt.show()
-    plt.savefig(BASE / 'homework'/ "snr_vs_aperture_radius.png", dpi=300)
-    plt.close()
+    for mag in np.arange(15, 24, 1) * u.mag:
+        event = Event(
+            # mag_obj=20 * u.mag, # object magnitude
+            mag_obj=mag, 
+            mag_sky=21 * u.mag, # sky magnitude
+            wavelength=500 * u.nm, # wavelength
+            bandwidth=100 * u.nm, # bandwidth
+        )
+        
+        fig = plt.figure(figsize=(8, 6))
+        ax = fig.add_subplot(111)
+        ax.set_xlabel("aperture radius (arcsec)")
+        ax.set_ylabel("SNR")
+        ax.set_title("SNR vs aperture radius")
+        for r_aperture in np.arange(0.1, 5, 0.1) * u.arcsec:
+            snr = obsertory.cal_snr(event, r_aperture)
+            ax.plot(r_aperture, snr, "k.")
+        # plt.show()
+        plt.savefig(BASE / 'homework'/ f"snr_vs_aperture_radius_{mag.value:.1f}.png", dpi=300)
+        plt.close()
 
-    obsertory.cal_mag_limit(
-        event=event,
-        snr=5,
-        r_aperture=1.5 * u.arcsec,
-        plot=True,
-        save=BASE / 'homework'/ "mag_limit.png",
-    )
+    # obsertory.cal_mag_limit(
+    #     event=event,
+    #     snr=5,
+    #     r_aperture=1.5 * u.arcsec,
+    #     plot=True,
+    #     save=BASE / 'homework'/ "mag_limit.png",
+    # )
 
 
 if __name__ == '__main__':

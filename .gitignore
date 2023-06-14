@@ -4,6 +4,11 @@
 software/
 test/
 pipeline/
+data/
+sex/
+my_data/
+figure/
+cache/
 
 homework/0612_1.ipynb
 
