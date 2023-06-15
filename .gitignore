@@ -7,9 +7,11 @@ pipeline/
 data/
 sex/
 my_data/
+my_figure/
 figure/
 cache/
 
 homework/0612_1.ipynb
+homework/test*.csv
 
 lecture/0614.md

@@ -38,61 +38,61 @@ def gen_shape_mask(fits_lst, target_shape=(6388, 9576), tag=None):
     return mask
 
 
-def cal_gain_single(flat, bias_var):
-    flat_mean = np.nanmean(flat, axis=(0, 1))
-    read_noise2_adu = np.nanmean(bias_var, axis=(0, 1))
-    flat_var = np.nanvar(flat, axis=(0, 1)) - read_noise2_adu
+# def cal_gain_single(flat, bias_var):
+#     flat_mean = np.nanmean(flat, axis=(0, 1))
+#     read_noise2_adu = np.nanmean(bias_var, axis=(0, 1))
+#     flat_var = np.nanvar(flat, axis=(0, 1)) - read_noise2_adu
 
-    gain_cal = flat_mean / flat_var
-    read_noise = np.sqrt(read_noise2_adu) * gain_cal
-    return gain_cal, read_noise, flat_var, flat_mean
+#     gain_cal = flat_mean / flat_var
+#     read_noise = np.sqrt(read_noise2_adu) * gain_cal
+#     return gain_cal, read_noise, flat_var, flat_mean
     
 
-# def cal_gain(flat_cube, bias_var, save_fig=None):
-#     '''
-#     return gain, chi2dof
-#     '''
-#     flat_mean_arr = np.nanmean(flat_cube, axis=(1, 2))
-#     read_noise2 = np.nanmean(bias_var, axis=(0, 1))
-#     flat_var_arr = np.nanvar(flat_cube, axis=(1, 2)) - read_noise2
+def cal_gain(flat_cube, bias_var, save_fig=None):
+    '''
+    return gain, chi2dof
+    '''
+    flat_mean_arr = np.nanmean(flat_cube, axis=(1, 2))
+    read_noise2 = np.nanmean(bias_var, axis=(0, 1))
+    flat_var_arr = np.nanvar(flat_cube, axis=(1, 2)) - read_noise2
 
-#     flat_var_arr_sort_args = np.argsort(flat_var_arr)
-#     flat_var_arr = flat_var_arr[flat_var_arr_sort_args]
-#     flat_mean_arr = flat_mean_arr[flat_var_arr_sort_args]
+    flat_var_arr_sort_args = np.argsort(flat_var_arr)
+    flat_var_arr = flat_var_arr[flat_var_arr_sort_args]
+    flat_mean_arr = flat_mean_arr[flat_var_arr_sort_args]
 
-#     gain_cal_arr = flat_mean_arr / flat_var_arr
-#     gain_cal = np.mean(gain_cal_arr)
-#     gain_std = np.std(gain_cal_arr)
+    gain_cal = np.mean(flat_mean_arr) / np.var(flat_mean_arr)
+    # gain_cal = np.mean(gain_cal_arr)
+    # gain_std = np.std(gain_cal_arr)
 
-#     # # fit the gain
-#     # def func(x, a):
-#     #     return a*x
+    # # fit the gain
+    # def func(x, a):
+    #     return a*x
 
-#     # def residual(a, x_data, y_data):
-#     #     return func(x_data, a) - y_data
+    # def residual(a, x_data, y_data):
+    #     return func(x_data, a) - y_data
 
-#     # gain_fit_arr, gain_cov = leastsq(residual, x0=1, args=(flat_var_arr, flat_mean_arr))
-#     # gain_fit = gain_fit_arr[0]
+    # gain_fit_arr, gain_cov = leastsq(residual, x0=1, args=(flat_var_arr, flat_mean_arr))
+    # gain_fit = gain_fit_arr[0]
 
-#     # flat_mean_fit = func(flat_var_arr, gain_fit)
+    # flat_mean_fit = func(flat_var_arr, gain_fit)
 
-#     # chi2 = np.sum(np.power(flat_mean_arr - flat_mean_fit, 2))
-#     # dof = flat_mean_fit.shape[0]
-#     # chi2dof = chi2 / dof
+    # chi2 = np.sum(np.power(flat_mean_arr - flat_mean_fit, 2))
+    # dof = flat_mean_fit.shape[0]
+    # chi2dof = chi2 / dof
 
-#     if save_fig:
-#         plt.figure()
-#         plt.title('Gain ' + r'$\sigma_{\rm{Gain}}=$' + f'{gain_std:.3g}')
-#         plt.plot(flat_var_arr, flat_mean_arr, 'k.', label='data')
-#         plt.plot(flat_var_arr, flat_var_arr * gain_cal, 'r--', label=f'gain={gain_cal:.3g}')
-#         plt.ylabel(r'MEAN $N_{e^-} / \rm{Gain}$')
-#         plt.xlabel(r'VAR $N_{e^-} / \rm{Gain}^2$')
-#         plt.legend()
-#         plt.grid(True)
-#         plt.savefig(save_fig, dpi=300)
-#         plt.close()
+    # if save_fig:
+    #     plt.figure()
+    #     plt.title('Gain ' + r'$\sigma_{\rm{Gain}}=$' + f'{gain_std:.3g}')
+    #     plt.plot(flat_var_arr, flat_mean_arr, 'k.', label='data')
+    #     plt.plot(flat_var_arr, flat_var_arr * gain_cal, 'r--', label=f'gain={gain_cal:.3g}')
+    #     plt.ylabel(r'MEAN $N_{e^-} / \rm{Gain}$')
+    #     plt.xlabel(r'VAR $N_{e^-} / \rm{Gain}^2$')
+    #     plt.legend()
+    #     plt.grid(True)
+    #     plt.savefig(save_fig, dpi=300)
+    #     plt.close()
     
-#     return gain_cal, gain_std, read_noise2 * gain_cal**2, flat_var_arr, flat_mean_arr
+    return gain_cal, np.sqrt(read_noise2 * gain_cal**2)
 
 
 def cal_gain_using_flat(flat_cube: np.ndarray, bias_var: np.ndarray, size_subimg: int, save_perfix: str=''):
@@ -100,7 +100,6 @@ def cal_gain_using_flat(flat_cube: np.ndarray, bias_var: np.ndarray, size_subimg
     N_flat, w_flat, h_flat = flat_cube.shape
     size_subimg = 10
     flat_stat_dict = {
-        'idx_img': [], 
         'w_st': [], 
         'w_ed': [], 
         'h_st': [], 
@@ -115,56 +114,44 @@ def cal_gain_using_flat(flat_cube: np.ndarray, bias_var: np.ndarray, size_subimg
     N_cal_w = w_flat // size_subimg
     N_cal_h = h_flat // size_subimg
     N_cal_total = N_cal_w * N_cal_h
-    for img_idx in range(N_flat):
-        print(f'flat {img_idx + 1}/{N_flat}')
-        save_path = img_save_dir / f'{save_perfix}flat{img_idx+1:03d}.png'
-        gain_lst = []
-        read_noise_lst = []
-        flat_var_lst = []
-        flat_mean_lst = []
-        for idx in tqdm(
-            range(N_cal_total), 
-            desc='cal gain', 
-            total=N_cal_total,
-        ):
-            i = idx // N_cal_h
-            j = idx % N_cal_h
-            i_st, i_ed = i*size_subimg, (i+1)*size_subimg
-            j_st, j_ed = j*size_subimg, (j+1)*size_subimg
-            # save_path = img_save_dir / f'{save_perfix}{i_st:04d}_{i_ed:04d}_{j_st:04d}_{j_ed:04d}.png'
-            gain_cal, read_noise, flat_var, flat_mean = cal_gain_single(flat_cube[img_idx, i_st:i_ed, j_st:j_ed], bias_var[i_st:i_ed, j_st:j_ed])
-            # gain_fit, sig_gain, read_noise2, flat_var_arr, flat_mean_arr = cal_gain(flat_cube[:, i_st:i_ed, j_st:j_ed], bias_var[i_st:i_ed, j_st:j_ed], save_fig=save_path)
-            flat_stat_dict['idx_img'].append(img_idx)
-            flat_stat_dict['w_st'].append(i_st)
-            flat_stat_dict['w_ed'].append(i_ed)
-            flat_stat_dict['h_st'].append(j_st)
-            flat_stat_dict['h_ed'].append(j_ed)
-            flat_stat_dict['gain'].append(gain_cal)
-            flat_stat_dict['read_noise'].append(read_noise)
-            gain_lst.append(gain_cal)
-            read_noise_lst.append(read_noise)
-            flat_var_lst.append(flat_var)
-            flat_mean_lst.append(flat_mean)
-        gain_arr = np.array(gain_lst)
-        read_noise_arr = np.array(read_noise_lst)
-        flat_var_arr = np.array(flat_var_lst)
-        flat_mean_arr = np.array(flat_mean_lst)
-        gain_mean = np.mean(gain_arr)
-        gain_std = np.std(gain_arr)
-        read_noise_mean = np.mean(read_noise_arr)
-        read_noise_std = np.std(read_noise_arr)
+    for idx in tqdm(
+        range(N_cal_total), 
+        desc='cal gain', 
+        total=N_cal_total,
+    ):
+        i = idx // N_cal_h
+        j = idx % N_cal_h
+        i_st, i_ed = i*size_subimg, (i+1)*size_subimg
+        j_st, j_ed = j*size_subimg, (j+1)*size_subimg
+        # save_path = img_save_dir / f'{save_perfix}{i_st:04d}_{i_ed:04d}_{j_st:04d}_{j_ed:04d}.png'
+        gain_cal, read_noise = cal_gain(flat_cube[:, i_st:i_ed, j_st:j_ed], bias_var[i_st:i_ed, j_st:j_ed])
+        # gain_fit, sig_gain, read_noise2, flat_var_arr, flat_mean_arr = cal_gain(flat_cube[:, i_st:i_ed, j_st:j_ed], bias_var[i_st:i_ed, j_st:j_ed], save_fig=save_path)
+        flat_stat_dict['w_st'].append(i_st)
+        flat_stat_dict['w_ed'].append(i_ed)
+        flat_stat_dict['h_st'].append(j_st)
+        flat_stat_dict['h_ed'].append(j_ed)
+        flat_stat_dict['gain'].append(gain_cal)
+        flat_stat_dict['read_noise'].append(read_noise)
+    gain_arr = np.array(gain_lst)
+    read_noise_arr = np.array(read_noise_lst)
+    flat_var_arr = np.array(flat_var_lst)
+    flat_mean_arr = np.array(flat_mean_lst)
+    gain_mean = np.mean(gain_arr)
+    gain_std = np.std(gain_arr)
+    read_noise_mean = np.mean(read_noise_arr)
+    read_noise_std = np.std(read_noise_arr)
 
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        ax.plot(flat_var_arr, flat_mean_arr, 'k.', label='data')
-        # ax.plot(flat_var_arr, flat_var_arr * gain_mean, 'r-', alpha=0.8, label=f'gain={gain_mean:.3g}')
-        ax.set_xlabel(r'VAR $N_{e^-} / \rm{Gain}^2$')
-        ax.set_ylabel(r'MEAN $N_{e^-} / \rm{Gain}$')
-        ax.set_title('Gain ' + r'$\sigma_{\rm{Gain}}=$' + f'{gain_std:.3g}')
-        ax.grid(True)
-        ax.legend(loc='upper left')
-        fig.savefig(save_path, dpi=300)
-        plt.close(fig)
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.plot(flat_var_arr, flat_mean_arr, 'k.', label='data')
+    # ax.plot(flat_var_arr, flat_var_arr * gain_mean, 'r-', alpha=0.8, label=f'gain={gain_mean:.3g}')
+    ax.set_xlabel(r'VAR $N_{e^-} / \rm{Gain}^2$')
+    ax.set_ylabel(r'MEAN $N_{e^-} / \rm{Gain}$')
+    ax.set_title('Gain ' + r'$\sigma_{\rm{Gain}}=$' + f'{gain_std:.3g}')
+    ax.grid(True)
+    ax.legend(loc='upper left')
+    fig.savefig(save_path, dpi=300)
+    plt.close(fig)
 
     df_gain = pd.DataFrame(flat_stat_dict)
     df_gain.to_csv(data_save_dir / f'{save_perfix}{i_st:04d}_{i_ed:04d}_{j_st:04d}_{j_ed:04d}.csv', index=False)
